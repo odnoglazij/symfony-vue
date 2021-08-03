@@ -1,2 +1,2 @@
 # symfony-vue
-# symfony-vue
+Навчальний проект для РГК по php 2021 рік
