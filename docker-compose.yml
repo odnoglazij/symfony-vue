@@ -22,6 +22,7 @@ services:
       - ./:/var/www
       - ./docker/dev/php/php.ini:/usr/local/etc/php/php.ini
 
+
   shop-php-fpm:
     container_name: shop-php-fpm
     build:
