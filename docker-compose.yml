@@ -1,37 +1,22 @@
 version: '3.3'
 
-# docker-composes работает с сервисами.
-# 1 сервис = 1 контейнер.
-# Сервисом может быть клиент, сервер, сервер баз данных...
-# Раздел, в котором описаны сервисы, начинается с 'services'.
-
 services:
-  # Первый сервис (контейнер): shop-php.
-  # Назвать его можно так, как нужно разработчику.
-  # Понятное название сервиса помогает определить его роль.
 
   shop-php:
     container_name: shop-php
-    # Ключевое слово "build" позволяет задать
-    # путь к файлу Dockerfile, который нужно использовать для создания образа,
-    # который позволит запустить сервис.
-
-    build:
-      context: ./docker/dev/php
-    volumes:
-      - ./:/var/www
-      - ./docker/dev/php/php.ini:/usr/local/etc/php/php.ini
-
-
-  shop-php-fpm:
-    container_name: shop-php-fpm
+    user: "${UID}:${GID}"
     build:
       context: ./docker/dev/php-fpm
-
+    environment:
+      - APP_ENV=${APP_ENV}
+      - APP_SECRET=${APP_SECRET}
+      - DATABASE_TIMEZONE=Europe/Kiev
+      - PHP_IDE_CONFIG="serverName=Docker"
     volumes:
       - ./:/var/www
+      - ./docker/dev/php-fpm/config.d/xdebug.ini:/usr/local/etc/php/config.d/docker-php-ext-xdebug.ini
+      - ./docker/dev/php-fpm/config.d/error_reporting.ini:/usr/local/etc/php/config.d/error_reporting.ini
       - ./docker/dev/php-fpm/php.ini:/usr/local/etc/php/php.ini
-
 
   shop-nginx:
     container_name: shop-nginx
@@ -44,24 +29,24 @@ services:
       - ./docker/dev/nginx/conf.d/:/etc/nginx/conf.d
       - ./docker/logs:/var/log
     depends_on:
-      - shop-php-fpm
-
-    # Если мы хотим обратиться к серверу с локальногонашего компьютера (находясь за пределами контейнера),
-    # мы должны организовать перенаправление этого порта на порт компьютера.
-    # Сделать это нам поможет ключевое слово 'ports'.
-    # При его использовании применяется следующая конструкция: [порт компьютера]:[порт контейнера]
-    # В нашем случае нужно использовать порт компьютера 80 и организовать его связь с портом
-    # 80 контейнера (так как именно на этот порт сервер ожидает поступления запросов).
+      - shop-php
 
     ports:
       - "80:80"
       - "443:443"
-  #
-  shop-node:
-    container_name: shop-node
-    image: node:latest
-    volumes:
-      - ./:/var/www
-    working_dir: /var/www
+
+  mssql:
+    container_name: mssql
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=1Ghbdtn!
     ports:
-      - "8080:8080"
+      - "1433:1433"
+    volumes:
+      - ms_sqlsrv_data:/var/opt/mssql
+
+volumes:
+    ms_sqlsrv_data:
+      driver: local
+
